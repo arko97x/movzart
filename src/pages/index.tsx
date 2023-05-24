@@ -223,8 +223,8 @@ export default function NewHome() {
         </div>
         <div className={`w-full px-8 sm:px-10 md:px-24 pt-9 md:pt-10 ${cameraReady ? "" : "hidden"} flex justify-center`}>
           <div className="grid gap-6 grid-rows-2 sm:grid-cols-2">
-            <div className="relative flex flex-col space-y-1 border border-gray-300 rounded-md p-4">
-              <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm text-gray-700 font-mono bg-white px-1 py-1">LEFT HAND CHORDS</p>
+            <div className="relative flex flex-col space-y-1 border border-gray-300 rounded-md p-4 xl:p-8">
+              <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm xl:text-2xl text-gray-700 font-mono bg-white px-1 py-1">LEFT HAND CHORDS</p>
               <div className="grid gap-4 grid-cols-4">
                 <BottomSheet
                   label="PINKY"
@@ -253,8 +253,8 @@ export default function NewHome() {
               </div>
             </div>
 
-            <div className="relative flex flex-col space-y-1 border border-gray-300 rounded-md p-4">
-              <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm text-gray-700 font-mono bg-white px-1 py-1">RIGHT HAND CHORDS</p>
+            <div className="relative flex flex-col space-y-1 border border-gray-300 rounded-md p-4 xl:p-8">
+              <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm xl:text-2xl text-gray-700 font-mono bg-white px-1 py-1">RIGHT HAND CHORDS</p>
               <div className="grid gap-4 grid-cols-4">
                 <BottomSheet
                   label="INDEX"
