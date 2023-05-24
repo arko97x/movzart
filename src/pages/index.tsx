@@ -227,16 +227,10 @@ export default function NewHome() {
               <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm text-gray-700 font-mono bg-white px-1 py-1">LEFT HAND CHORDS</p>
               <div className="grid gap-4 grid-cols-4">
                 <BottomSheet
-                  label="INDEX"
+                  label="PINKY"
                   options={options.map(o => o.name)}
-                  selectedOption={selectedLI}
-                  setSelectedOption={setSelectedLI}
-                />
-                <BottomSheet
-                  label="MIDDLE"
-                  options={options.map(o => o.name)}
-                  selectedOption={selectedLM}
-                  setSelectedOption={setSelectedLM}
+                  selectedOption={selectedLP}
+                  setSelectedOption={setSelectedLP}
                 />
                 <BottomSheet
                   label="RING"
@@ -245,10 +239,16 @@ export default function NewHome() {
                   setSelectedOption={setSelectedLR}
                 />
                 <BottomSheet
-                  label="PINKY"
+                  label="MIDDLE"
                   options={options.map(o => o.name)}
-                  selectedOption={selectedLP}
-                  setSelectedOption={setSelectedLP}
+                  selectedOption={selectedLM}
+                  setSelectedOption={setSelectedLM}
+                />
+                <BottomSheet
+                  label="INDEX"
+                  options={options.map(o => o.name)}
+                  selectedOption={selectedLI}
+                  setSelectedOption={setSelectedLI}
                 />
               </div>
             </div>
