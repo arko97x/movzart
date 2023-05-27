@@ -100,7 +100,7 @@ export default function NewHome() {
             handedness = results.multiHandedness[handIdx].label
 
             // Set the color based on the handedness of the hand - the handedness labels are flipped? Cuz canvas is flipped 180 deg?
-            const color = handedness === "Left" ? "#FF0000" : "#00FF00"
+            const color = handedness === "Left" ? "#31A4FF" : "#004073"
 
             drawConnectors(canvasCtx, handLandmarks, HAND_CONNECTIONS, {
               color: color,
@@ -215,7 +215,7 @@ export default function NewHome() {
             <div style={{ transform: "translate(-50%, -50%)" }} className={`absolute top-1/2 left-1/2 z-40 ${isRunning ? "hidden" : "block"} text-white`}>Camera paused</div>
             <canvas
               ref={canvasRef}
-              className={`output_canvas w-[80vw] md:w-[60vw] lg:w-[50vw] xl:w-[50vw] h-[50vh] sm:h-auto object-cover transform -scale-x-100 rounded-3xl border-2 ${cameraReady ? "border-transparent" : "border-gray-300"} p-0.5`}
+              className={`output_canvas w-[80vw] md:w-[60vw] lg:w-[50vw] 2xl:w-[50vw] h-[50vh] sm:h-auto object-cover transform -scale-x-100 rounded-3xl border-2 ${cameraReady ? "border-transparent" : "border-gray-300"} p-0.5`}
               width={1280}
               height={720}
             />
@@ -223,8 +223,8 @@ export default function NewHome() {
         </div>
         <div className={`w-full px-8 sm:px-10 md:px-24 pt-9 md:pt-10 ${cameraReady ? "" : "hidden"} flex justify-center`}>
           <div className="grid gap-6 grid-rows-2 sm:grid-cols-2">
-            <div className="relative flex flex-col space-y-1 border border-gray-300 rounded-md p-4 xl:p-8">
-              <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm xl:text-2xl text-gray-700 font-mono bg-white px-1 py-1">LEFT HAND CHORDS</p>
+            <div className="relative flex flex-col space-y-1 border border-gray-300 rounded-md p-4 2xl:p-8">
+              <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm 2xl:text-2xl text-gray-700 font-mono bg-white px-1 py-1">LEFT HAND CHORDS</p>
               <div className="grid gap-4 grid-cols-4">
                 <BottomSheet
                   label="PINKY"
@@ -253,8 +253,8 @@ export default function NewHome() {
               </div>
             </div>
 
-            <div className="relative flex flex-col space-y-1 border border-gray-300 rounded-md p-4 xl:p-8">
-              <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm xl:text-2xl text-gray-700 font-mono bg-white px-1 py-1">RIGHT HAND CHORDS</p>
+            <div className="relative flex flex-col space-y-1 border border-gray-300 rounded-md p-4 2xl:p-8">
+              <p className="absolute -top-[0.9rem] -left-[0.38rem] text-sm 2xl:text-2xl text-gray-700 font-mono bg-white px-1 py-1">RIGHT HAND CHORDS</p>
               <div className="grid gap-4 grid-cols-4">
                 <BottomSheet
                   label="INDEX"

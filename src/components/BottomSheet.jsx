@@ -47,7 +47,7 @@ const BottomSheet = ({ label, options, selectedOption, setSelectedOption }) => {
                             {options.map((option) => (
                                 <div
                                     key={option}
-                                    className={`p-2 h-14 w-14 flex justify-center items-center cursor-pointer ${option === selectedOption ? "bg-gray-300 hover:bg-gray-300" : "bg-white hover:bg-gray-50"} border border-gray-300 rounded-md shadow-sm text-sm xl:text-lg font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#457B9D]`}
+                                    className={`p-2 h-14 w-14 flex justify-center items-center cursor-pointer ${option === selectedOption ? "bg-gray-300 hover:bg-gray-300" : "bg-white hover:bg-gray-50"} border border-gray-300 rounded-md shadow-sm text-sm 2xl:text-lg font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#457B9D]`}
                                     onClick={() => handleSelectOption(option)}>
                                     {option}
                                 </div>
@@ -76,9 +76,9 @@ const BottomSheet = ({ label, options, selectedOption, setSelectedOption }) => {
             </div>
 
             <div className="relative inline-block">
-                <label className="block text-xs xl:text-lg font-mono text-gray-700 ml-0.5 pb-0.5">{label}</label>
+                <label className="block text-xs 2xl:text-lg font-mono text-gray-700 ml-0.5 pb-0.5">{label}</label>
                 <button
-                    className="z-50 p-4 h-14 w-14 flex justify-center items-center bg-white hover:bg-gray-50 border border-gray-300 rounded-md shadow-sm text-sm xl:text-xl font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#457B9D]"
+                    className="z-50 p-4 h-14 w-14 flex justify-center items-center bg-white hover:bg-gray-50 border border-gray-300 rounded-md shadow-sm text-sm 2xl:text-xl font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#457B9D]"
                     onClick={openBottomSheet}
                 >
                     {selectedOption}
