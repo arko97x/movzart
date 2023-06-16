@@ -24,7 +24,7 @@ const DepressibleButton = ({ btnText, width }) => {
         `}
             </style>
             <div className="min-h-[3.1rem] flex items-center justify-center bg-transparent">
-                <button id="depressibleButton" className={`"font-mono px-6 py-2 " + ${width} + " bg-[#6D9F71] text-white rounded-xl border-[#4F7352] border-l-[1px] border-r-[1px] border-t-[1px] border-b-[8px] hover:border-b-[5px]"`}>
+                <button id="depressibleButton" className={`"font-mono px-6 py-2 " + ${width} + " bg-white text-[#560BAD] rounded-xl border-gray-300 border-l-[1px] border-r-[1px] border-t-[1px] border-b-[8px] hover:border-b-[5px]"`}>
                     {btnText}
                 </button>
             </div>
