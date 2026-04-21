@@ -1,0 +1,265 @@
+# Movzart: Codebase Assessment
+
+## What Movzart Is
+
+Movzart is a gestural music interface built for the browser. You hold your hands in front of your device's camera, pinch a finger against your thumb, and a chord plays. Each finger on each hand maps to a chord you've selected. Eight fingers, eight chord slots. The interaction requires no keyboard, mouse, or touchscreen — just your hands in the air.
+
+The name blends "Movement" and "Mozart." It was built as a capstone project for a Master's in Design (Human-Centred Design) at Srishti Manipal Institute of Art, Design and Technology.
+
+The commit history tells a compact story. The initial commit landed on May 24, 2023. That same day saw the bulk of the work: the core hand tracking loop, audio playback, chord selection UI, favicon, and several README updates. A jury-day presentation happened shortly after — on May 27, a commit incorporated feedback about the right hand's skeleton colour, which had been red and read as "invalid" to reviewers. The last commit, on June 16, 2023, added a landing page. Then the project went dormant.
+
+Ten commits total. One branch. No open issues or pull requests.
+
+---
+
+## How the Interaction Works
+
+The browser requests camera access. The video feed goes into MediaPipe Hands, a machine learning model that returns 21 landmark points per detected hand — positions of the wrist, each knuckle, each fingertip, all in 3D coordinates. The code supports up to two hands tracked simultaneously.
+
+For each detected hand, the code extracts five specific landmarks:
+- Landmark 4: thumb tip
+- Landmark 8: index fingertip
+- Landmark 12: middle fingertip
+- Landmark 16: ring fingertip
+- Landmark 20: pinky fingertip
+
+It computes the Euclidean distance between the thumb tip and each of the four other fingertips in 3D space:
+
+```
+distance = sqrt((tip.x - thumb.x)² + (tip.y - thumb.y)² + (tip.z - thumb.z)²)
+```
+
+If any distance drops below 0.049 (the pinch threshold), a chord triggers. The chord is played through Tone.js's `PolySynth` with an eighth-note duration. A state array tracks which fingers are currently pinched so the same gesture doesn't fire repeatedly — a chord triggers only at the moment of contact and resets once the fingers separate.
+
+The camera canvas is mirrored horizontally (CSS `transform: -scale-x-100`), which means MediaPipe's handedness labels come back inverted. The code accounts for this: when MediaPipe says "Left," it maps to the right hand's chords, and vice versa.
+
+Visual feedback during play is restrained. The canvas border shifts to a muted teal (`#457B9D`) when a note sounds. Each hand's skeleton is drawn in a different shade of blue — `#31A4FF` for one, `#004073` for the other. The colour assignment was revised after jury-day feedback; the right hand was originally drawn in red, which reviewers felt implied error or invalidity.
+
+---
+
+## The Tech Stack
+
+Every version below is pinned to what was current when the code shipped in mid-2023.
+
+### Framework and Language
+- **Next.js 13.4.0** — Pages Router, not the App Router (which was brand new and unstable at the time)
+- **React 18.2.0**
+- **TypeScript 5.0.4**
+
+### Styling
+- **Tailwind CSS 3.3.2**
+- PostCSS 8.4.23
+- Autoprefixer 10.4.14
+
+### Hand Tracking
+- `@mediapipe/hands` 0.4.1675469240
+- `@mediapipe/camera_utils` 0.3.1675466862
+- `@mediapipe/drawing_utils` 0.3.1675466124
+- `@mediapipe/control_utils` 0.6.1675466023
+- Model files loaded at runtime from `cdn.jsdelivr.net/npm/@mediapipe/hands/`
+
+### Audio
+- **Tone.js 14.7.77** — uses `PolySynth` for multi-note chord playback
+
+### Unused or Underused Dependencies
+- **Three.js 0.152.2** — imported in `index.tsx` for its `Vector3` class. Used to store fingertip positions in a `lastPositions` array, but those stored positions are never read back or used for anything downstream. The entire library (around 600KB minified) ships for a data structure that gets written to and ignored.
+- **p5.js 1.6.0** — loaded via dynamic import with SSR disabled. Renders a 400×400 canvas containing a white circle on a black background, then hides the whole element with `className="hidden"`. Looks like scaffolding for a planned visualization feature that never materialized.
+- **react-loading 2.0.3** — provides a bubble animation during camera initialization. The only dependency here that earns its keep relative to its weight.
+
+### Deployment
+Vercel, based on `.vercel/` appearing in `.gitignore` and the landing page linking directly to `movzart.vercel.app`.
+
+### What's Absent
+No database. No authentication. No real API routes — the only endpoint is `/api/hello`, which is Next.js's auto-generated boilerplate returning `{ name: 'John Doe' }`. No test framework. No CI/CD pipeline. No environment variables.
+
+---
+
+## Project Structure
+
+```
+movzart/
+├── public/
+│   └── gg.png                     # Logo on the landing page
+├── src/
+│   ├── components/
+│   │   ├── BottomSheet.jsx        # Chord picker (modal on desktop, bottom sheet on mobile)
+│   │   ├── ChordFrequencies.jsx   # 24 chord definitions (12 major, 12 minor)
+│   │   ├── depressibleButton.jsx  # Animated CTA button for the landing page
+│   │   ├── DropdownList.jsx       # Earlier chord selector iteration, now unused
+│   │   └── mySketch.jsx           # Hidden p5.js canvas placeholder
+│   ├── pages/
+│   │   ├── _app.tsx               # App shell — imports global styles, renders pages
+│   │   ├── _document.tsx          # HTML document wrapper
+│   │   ├── index.tsx              # Main application: camera, tracking, audio, UI
+│   │   ├── landing.tsx            # Purple landing page with "GET STARTED" button
+│   │   └── api/
+│   │       └── hello.ts           # Default Next.js API route (untouched)
+│   └── styles/
+│       └── globals.css            # Three Tailwind directives (@base, @components, @utilities)
+├── next.config.js                 # reactStrictMode: true, nothing else
+├── tailwind.config.js             # Standard content globs, default theme, no plugins
+├── tsconfig.json                  # ES5 target, strict mode, @/* path alias to ./src/*
+├── postcss.config.js              # tailwindcss + autoprefixer
+├── package.json                   # Project name is still "testtt"
+└── README.md                      # Brief project description, marked as WIP
+```
+
+---
+
+## Component Breakdown
+
+### `index.tsx` — The Entire Application
+
+This single file carries all the application logic. Camera initialization, MediaPipe setup, gesture detection, distance calculations, audio triggering, hand skeleton drawing, layout, chord selector wiring. It's 293 lines.
+
+State is managed through eight individual `useState` hooks — one per chord slot (`selectedLI`, `selectedLM`, `selectedLR`, `selectedLP` for the left hand's index, middle, ring, and pinky; `selectedRI`, `selectedRM`, `selectedRR`, `selectedRP` for the right). Two more booleans track camera readiness and the pause/play toggle.
+
+Each render, the component runs `.find()` on the chord options array eight times to look up frequency values from the selected chord names. These lookups are not memoized.
+
+The `useEffect` that initializes the hand tracking pipeline has **no dependency array**. This is a significant bug with cascading effects. Every state change — selecting a new chord, toggling pause — causes React to re-render the component, which tears down the previous `MediaPipe Hands` instance, `Camera` instance, and `Tone.js PolySynth`, then creates new ones from scratch. On a fast laptop, the teardown-rebuild cycle is quick enough that the effect is barely perceptible. On mobile, it stacks into visible stutters that compound the existing performance constraints.
+
+The camera is instantiated with `width: window.innerWidth` and `height: window.innerHeight`, tying capture resolution to the device's viewport. The canvas it renders into is fixed at 1280×720 pixels. No frame throttling exists — every camera frame goes directly to `hands.send()`.
+
+### `BottomSheet.jsx` — Chord Selection
+
+A responsive chord picker component. Detects viewport width on mount and on resize to decide its presentation: on screens 768px or wider, it appears as a centred modal overlay. On narrower screens, it slides up from the bottom.
+
+The picker displays all 24 chords in a 6-column, 4-row grid. Each chord is a 56×56px button showing the chord name. The currently selected chord gets a gray background. Tapping a chord updates the parent state and closes the picker. Opening the picker disables page scroll by setting `document.body.style.overflow = "hidden"` directly.
+
+### `ChordFrequencies.jsx` — The Chord Library
+
+Defines 24 chords: every chromatic note in both major and minor. Each chord is an array of three notes in scientific pitch notation. C major is `["C4", "E4", "G4"]`. A minor is `["A4", "C5", "E5"]`.
+
+Exported as an ordered array of `{ name, value }` objects. The order is alphabetical by note, alternating major then minor: A, Am, A#, A#m, B, Bm, C, Cm, and so on through G#m.
+
+### `depressibleButton.jsx` — Landing Page CTA
+
+A button with a physical press-down effect. Uses inline `<style>` tags containing Tailwind `@apply` directives — a pattern that functions but that Tailwind's documentation discourages.
+
+There's a casing problem here. The file is named `depressibleButton.jsx` (lowercase d), but `landing.tsx` imports it as `../components/DepressibleButton` (uppercase D). macOS's filesystem is case-insensitive by default, so this resolves fine during local development. On Linux (including most CI servers and Docker containers), it would fail.
+
+### `mySketch.jsx` — Unused Visual Canvas
+
+A p5.js sketch that draws a white circle on a black 400×400 canvas, wrapped in a `<div className="hidden">`. It accepts a `data` prop that was intended to pipe hand position data into the visualization (there's a commented-out `console.log(data)` inside the draw loop). The `data` object passed from `index.tsx` is an empty object literal `{}`, created fresh every render.
+
+This component and its p5.js dependency represent an abandoned feature direction — likely generative visuals responding to hand movements or chord playback.
+
+### `DropdownList.jsx` — Dead Code
+
+A traditional dropdown selector for chords. Supports keyboard (Escape to close) and click-outside-to-dismiss. It was the predecessor to `BottomSheet.jsx` and is no longer imported anywhere. Dead code.
+
+---
+
+## The Chord System
+
+Eight slots across two hands, four per hand. Users assign any of the 24 chords to any slot through the `BottomSheet` picker.
+
+Default chord assignments on page load:
+
+**Left hand:**
+| Finger | Chord | Notes |
+|--------|-------|-------|
+| Index | C | C4, E4, G4 |
+| Middle | Dm | D4, F4, A4 |
+| Ring | F | F4, A4, C5 |
+| Pinky | F# | F#4, A#4, C#5 |
+
+**Right hand:**
+| Finger | Chord | Notes |
+|--------|-------|-------|
+| Index | G# | G#4, C5, D#5 |
+| Middle | D# | D#4, G4, A#4 |
+| Ring | F#m | F#4, A4, C#5 |
+| Pinky | B | B4, D#5, F#5 |
+
+Tone.js renders each chord as three simultaneous notes through `PolySynth`, held for an eighth-note duration (`"8n"`). The synth instance is created inside the `useEffect`, meaning it gets reconstructed on every render cycle due to the missing dependency array.
+
+---
+
+## The Model Complexity Decision
+
+MediaPipe Hands offers two model complexity levels: 0 (lite) and 1 (full).
+
+The lite model was tested during development and rejected. Its landmark predictions had enough frame-to-frame jitter that the 0.049 pinch threshold would trip falsely. Fingers resting at a natural distance from the thumb would occasionally register as pinched because the predicted positions jumped between frames. For something meant to feel like a musical instrument, false notes are more damaging than slow response. A chord sounding when you didn't pinch breaks trust in the interface faster than a 200ms delay does.
+
+The full model (`modelComplexity: 1`) produces stabler landmark estimates. Its predictions don't wander as much between frames, which means the pinch threshold behaves predictably. The cost is compute: the full model runs roughly 2–3× heavier than the lite variant.
+
+This wasn't an oversight or a failure to optimize. It was a decision made after testing both options and finding that the lite model made the instrument unreliable. Accuracy took priority over universal device compatibility, and the tradeoff was accepted with open eyes.
+
+The confidence thresholds reinforce this decision. Both `minDetectionConfidence` and `minTrackingConfidence` are set to 0.75 — relatively high values that further reduce false detections but increase the per-frame compute budget. Lowering them would help performance, but would reintroduce the same instability that ruled out the lite model.
+
+---
+
+## Performance: Desktop vs. Mobile
+
+### On Desktop (Laptop Browsers)
+
+The experience works. Hand tracking runs in near-real-time. Pinch detection triggers chords with minimal perceptible delay. The canvas draws smoothly. Even the `useEffect` re-initialization bug gets absorbed — a laptop CPU can tear down and rebuild the MediaPipe pipeline fast enough that the gap between instances isn't noticeable during normal use.
+
+### On Mobile Browsers
+
+The experience degrades noticeably. The interface is sluggish. Chord triggers lag behind the physical gesture. The hand skeleton drawing stutters. Several factors contribute, and they compound each other:
+
+**The full model running through WASM on a phone CPU.** MediaPipe's JavaScript implementation uses a WebAssembly backend that runs inference on the CPU. There was no reliable WebGPU delegate for in-browser inference in mid-2023, and WebGL acceleration for MediaPipe was inconsistent across mobile browsers. Laptop CPUs can sustain the throughput this model demands. Phone SoCs cannot, and they thermal-throttle under sustained load, which means performance degrades further the longer you use the app.
+
+**Camera resolution tied to viewport dimensions.** The camera captures at `window.innerWidth × window.innerHeight`. On a phone with a tall viewport, this sends larger frames into inference than necessary. Hand tracking doesn't need a 390×844 input — a 640×480 feed would produce comparable landmark accuracy at a fraction of the cost.
+
+**No frame skipping or throttling.** The `onFrame` callback fires for every camera frame. When inference on the previous frame hasn't finished, the pipeline creates backpressure. On desktop, inference usually finishes before the next frame arrives. On mobile, it doesn't, and there's no mechanism to drop frames or pace the processing.
+
+**The missing dependency array on `useEffect`.** Any interaction that changes React state (tapping a chord selector, toggling pause) causes a full teardown and rebuild of the MediaPipe model, camera, and synth. On mobile, where initialization is measurably slower, each rebuild produces a visible hitch. During a chord selection flow where a user might tap multiple chords in sequence, this could trigger several rebuilds within seconds.
+
+**Bundle weight on slow connections.** Three.js and p5.js together add significant kilobytes to the JavaScript bundle. On a laptop over Wi-Fi, this barely registers. On a phone over a cellular connection, it extends the time before the app becomes interactive.
+
+The net result: the same core interaction that felt responsive on a laptop felt broken on a phone. Not because of a single bottleneck, but because five or six moderate inefficiencies stacked on top of hardware that had less headroom to absorb them.
+
+---
+
+## Code Quality Observations
+
+### Mixed File Conventions
+TypeScript (`.tsx`) and JavaScript (`.jsx`) coexist in the same project without a clear boundary. Pages are TypeScript. Components are JavaScript. The `tsconfig.json` has `strict: true` and `forceConsistentCasingInFileNames: true`, but the JSX components bypass TypeScript's checking entirely. The casing flag would have caught the `depressibleButton` / `DepressibleButton` mismatch — if the file had been `.tsx`.
+
+### Single-File Architecture
+All application logic lives in `index.tsx`. Gesture detection, audio playback, camera management, layout rendering, state management — a single 293-line component handles everything. This is fine for a prototype and becomes a problem the moment you want to change one piece without reasoning about all the others.
+
+### State Repetition
+Eight `useState` hooks for chord selections, each with their own setter, each piped individually to a `BottomSheet` component. Eight `.find()` lookups on every render. The data flows could collapse into a reducer or a single state object without losing clarity.
+
+### No Tests
+No Jest, Vitest, Cypress, Playwright, or any other testing framework. No test files. No coverage configuration. The `package.json` has no test script.
+
+### No CI/CD
+No GitHub Actions workflows, no pre-commit hooks, no automated linting on push. The ESLint config from Next.js is present but only runs manually via `npm run lint`.
+
+### Package Identity
+The `package.json` still names the project `"testtt"` — left over from project scaffolding and never updated.
+
+---
+
+## What Was Built vs. What Was Planned
+
+Several artifacts in the codebase point to features that were started but never completed.
+
+The **p5.js sketch** was meant to be a visual layer. The component accepts a `data` prop, and `index.tsx` creates an empty `data` object and passes it through. The intent was likely to pipe hand landmark positions or audio events into a generative visualization — particles responding to gestures, waveforms reacting to chords, something in that space. The sketch draws a placeholder circle and hides itself.
+
+The **Three.js import and `lastPositions` array** reinforce this. Each detected pinch stores the fingertip's x/y position into a `Vector3`, but nothing ever reads those positions back. This was scaffolding for a feature that would have used finger movement trajectories — possibly for a 3D visualization, or for velocity-sensitive audio (playing louder based on how fast the pinch closed).
+
+The **landing page** links to the Vercel deployment URL (`https://movzart.vercel.app`) via a plain `<a>` tag instead of a Next.js `<Link>` to `/`. This suggests it was designed for a context where the landing page lived separately from the app — an embedded iframe, a presentation, or a QR code handout at a demo.
+
+The **DropdownList component** shows an earlier UI iteration for chord selection that was replaced by the more mobile-friendly BottomSheet. It still sits in the components folder, unused.
+
+---
+
+## The Codebase as a Snapshot
+
+This codebase reflects its origins: a working prototype built under the pressure of a capstone deadline, optimized for demonstrating a concept on the hardware it would be shown on (a laptop). The core loop — camera to hand landmarks to pinch detection to chord playback — functions and, on a capable machine, feels responsive enough to pass as a musical instrument.
+
+The decisions made during development were pragmatic. The full model was chosen because the lite model didn't work well enough. The Pages Router was chosen because the App Router was too new. The single-file architecture was chosen because there was one developer and a deadline. p5.js and Three.js were pulled in with intentions that ran out of time.
+
+What's left is a codebase that proves a concept and carries the scaffolding of ambitions beyond it. The mobile performance gap is a real constraint rooted in a legitimate accuracy requirement, compounded by implementation details (the `useEffect` bug, full-resolution capture, no frame throttling) that could have been addressed with more time.
+
+The last commit was June 16, 2023. Nearly three years of web platform evolution have passed since — WebGPU has matured, MediaPipe has shipped new solution APIs, Next.js has moved to 15.x, and the JavaScript ML inference landscape looks different than it did. This assessment captures what exists today as the starting point for whatever comes next.
+
+---
+
+*Assessment conducted March 11, 2026. Code last modified June 16, 2023.*
